@@ -19,7 +19,7 @@ If you know how to set one up, I would recommend using a Python virtual environm
 
 0. Ensure [Python](https://www.python.org/) is installed and updated
     - This tool was developed with version `3.13.1`, I cannot guarantee that it will work with previous versions
-1. Either download the [latest release]() or clone this repository with `git clone https://github.com/iccan-coder/gplates-utilities.git`
+1. Either download the [latest release](https://github.com/iccan-coder/gplates-utilities/releases/tag/v0.1.0) or clone this repository with `git clone https://github.com/iccan-coder/gplates-utilities.git`
 2. Open a terminal in the downloaded folder or navigate to the clones repository with `cd gplates-utilities`
 3. Install the required packages with `pip install -r requirements.txt`
 4. Run the application with `python main.py`

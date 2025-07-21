@@ -2,6 +2,7 @@ from PySide6.QtCore import Slot
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
 
 from core.session import Session
+from ui.feature_collection_loader import FeatureCollectionLoader
 from util.project_storage import load_project, save_project
 
 
@@ -15,6 +16,7 @@ class MainWindow(QMainWindow):
 
         # Widgets and Sub-Windows
         # TODO: Add these
+        self.feature_collection_manager = FeatureCollectionLoader(session)
 
         # File Menu Items
         file_menu = self.menuBar().addMenu("File")
@@ -26,8 +28,10 @@ class MainWindow(QMainWindow):
 
         file_menu.addSeparator()
 
-        load_file_collection_action = file_menu.addAction("Open File Collection(s)")
-        load_file_collection_action.triggered.connect(self.open_feature_collections)
+        manage_feature_collection_action = file_menu.addAction("Manage Feature Collections")
+        manage_feature_collection_action.triggered.connect(self.feature_collection_manager.show)
+        load_feature_collection_action = file_menu.addAction("Open Feature Collection(s)")
+        load_feature_collection_action.triggered.connect(self.open_feature_collections)
         load_rotation_model_action = file_menu.addAction("Open Rotation Model")
         load_rotation_model_action.triggered.connect(self.open_rotation_model)
 

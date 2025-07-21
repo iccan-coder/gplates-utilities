@@ -13,7 +13,6 @@ if __name__ == "__main__":
     session = Session()
 
     main_window = MainWindow(session)
-    main_window.resize(900, 400)
     main_window.show()
 
     sys.exit(app.exec())

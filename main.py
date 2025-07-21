@@ -1,10 +1,10 @@
 from PySide6.QtGui import QIcon
-from PySide6.QtWidgets import QApplication, QMainWindow
+from PySide6.QtWidgets import QApplication
 
 import sys
 
 from core.session import Session
-from ui.feature_splitting_window import FeatureSplittingWindow
+from ui.main_window import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -12,13 +12,8 @@ if __name__ == "__main__":
 
     session = Session()
 
-    window = FeatureSplittingWindow(session)
-
-    mwindow = QMainWindow()
-    mwindow.setWindowTitle("Plate Splitting - GPlates Utilities")
-    mwindow.setCentralWidget(window)
-    mwindow.resize(900, 400)
-
-    mwindow.show()
+    main_window = MainWindow(session)
+    main_window.resize(900, 400)
+    main_window.show()
 
     sys.exit(app.exec())

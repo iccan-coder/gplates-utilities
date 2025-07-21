@@ -1,26 +1,14 @@
 from os import path
-from PySide6.QtCore import QLocale, QObject
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
-from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QStyledItemDelegate, QTreeView, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget
 import pygplates
 
 from core.plate_splitter import split_plate_by_line
 from core.session import Session
 from models.line_filter_model import LineFilterModel
-from models.polygon_feature_filter_model import PolygonFeatureFilterModel
+from models.polygon_filter_model import PolygonFilterModel
+from ui.decorators.time_decorator_delegate import TimeDecoratorDelegate
 from ui.feature_collection_loader import FeatureCollectionLoader
-
-class TimeDecoratorDelegate(QStyledItemDelegate):
-    def __init__(self, /, parent: QObject | None) -> None:
-        super().__init__(parent)
-    
-    def displayText(self, value: str, _: QLocale) -> str:
-        if value == "-inf":
-            return "Distant Future"
-        elif value == "inf":
-            return "Distant Past"
-        
-        return value
 
 class FeatureSplittingWindow(QWidget):
     def __init__(self, session: Session):
@@ -32,7 +20,7 @@ class FeatureSplittingWindow(QWidget):
         self.rift_model.setFeatureTypeFilter(["ContinentalRift", "SubductionZone"])
         self.rift_model.setSourceModel(session.get_feature_model())
 
-        self.feature_model = PolygonFeatureFilterModel()
+        self.feature_model = PolygonFilterModel()
         self.feature_model.setSourceModel(session.get_feature_model())
         
         self.setWindowTitle("Plate Splitting Tool")

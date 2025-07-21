@@ -1,4 +1,5 @@
 from os import path
+from PySide6.QtCore import Slot
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
 from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget
 
@@ -13,10 +14,11 @@ class FeatureSplittingWindow(QWidget):
         super().__init__()
 
         self.session = session
+        self._save_location: str = ""
 
-        self.rift_model = LineFilterModel()
-        self.rift_model.setFeatureTypeFilter(["ContinentalRift", "SubductionZone"])
-        self.rift_model.setSourceModel(session.get_feature_model())
+        self.splitter_model = LineFilterModel()
+        self.splitter_model.setFeatureTypeFilter(["ContinentalRift", "SubductionZone"])
+        self.splitter_model.setSourceModel(session.get_feature_model())
 
         self.feature_model = PolygonFilterModel()
         self.feature_model.setSourceModel(session.get_feature_model())
@@ -27,17 +29,17 @@ class FeatureSplittingWindow(QWidget):
         split_date_label = QLabel("Split Time:")
         self.split_time = QLineEdit()
         self.split_time.setValidator(QDoubleValidator())
-        self.split_time.editingFinished.connect(self.updateSplitTime)
+        self.split_time.editingFinished.connect(self.update_split_time)
 
         plate_id_label = QLabel("Plate ID(s):")
         self.plate_filter = QLineEdit()
         self.plate_filter.setValidator(QRegularExpressionValidator("\\d+(,\\d*)*"))
-        self.plate_filter.editingFinished.connect(self.updatePlateFilter)
+        self.plate_filter.editingFinished.connect(self.update_plate_filter)
         
-        self.rift_selection = QComboBox()
-        self.rift_selection.setModel(self.rift_model)
-        self.rift_selection.setModelColumn(0)
-        self.rift_selection.setPlaceholderText("[Load Feature Collections to select Rift]")
+        self.splitter_selection = QComboBox()
+        self.splitter_selection.setModel(self.splitter_model)
+        self.splitter_selection.setModelColumn(0)
+        self.splitter_selection.setPlaceholderText("Select splitter feature ...")
 
         self.new_feature_view = QTreeView()
         self.new_feature_view.setModel(self.feature_model)
@@ -59,7 +61,6 @@ class FeatureSplittingWindow(QWidget):
 
         set_save_location_button = QPushButton("Set Save Location")
         set_save_location_button.clicked.connect(self.set_save_location)
-        self._save_location: str = ""
 
         split_button = QPushButton("Split")
         split_button.clicked.connect(self.on_split)
@@ -75,7 +76,7 @@ class FeatureSplittingWindow(QWidget):
         side_layout = QVBoxLayout()
         side_layout.addLayout(split_time_layout)
         side_layout.addLayout(plate_filter_layout)
-        side_layout.addWidget(self.rift_selection)
+        side_layout.addWidget(self.splitter_selection)
         side_layout.addWidget(QWidget(), 1)
         side_layout.addWidget(set_save_location_button, 0)
         side_layout.addWidget(split_button, 0)
@@ -86,37 +87,41 @@ class FeatureSplittingWindow(QWidget):
 
         self.setLayout(main_layout)
     
+    @Slot()
     def set_save_location(self):
         self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")
 
-    def updateSplitTime(self):
+    @Slot()
+    def update_split_time(self):
         time = float(self.split_time.text())
-        self.rift_model.setTimeFilter(time)
+        self.splitter_model.setTimeFilter(time)
         self.feature_model.setTimeFilter(time)
     
-    def updatePlateFilter(self):
+    @Slot()
+    def update_plate_filter(self):
         filter_text = self.plate_filter.text()
         if filter_text == "":
             self.feature_model.setPlateIdFilter([])
         self.feature_model.setPlateIdFilter([id for id in filter_text.split(",") if len(id) > 0])
 
+    @Slot()
     def on_split(self):
-        if self.rift_selection.currentIndex() < 0:
+        if self.splitter_selection.currentIndex() < 0:
             QMessageBox.critical(self, "Error", "No rift selected!")
             return
         
-        rift_idx = self.rift_model.index(self.rift_selection.currentIndex(), 6)
+        splitter_idx = self.splitter_model.index(self.splitter_selection.currentIndex(), 6)
         all_features = [f for lfc in self.session.loaded_feature_collections for f in lfc.feature_collection]
-        selected_rift = next(filter(lambda f: f.get_feature_id().get_string() == self.rift_model.itemData(rift_idx)[0], all_features))
+        selected_splitter = next(filter(lambda f: f.get_feature_id().get_string() == self.splitter_model.itemData(splitter_idx)[0], all_features))
         
         if self.split_time.text() == "":
-            QMessageBox.critical(self, "Error", "No rifting time set!")
+            QMessageBox.critical(self, "Error", "No split time set!")
             return
 
-        split_date = float(self.split_time.text())
+        split_time = float(self.split_time.text())
 
-        if selected_rift == None:
-            QMessageBox.critical(self, "Error", "No rift selected!")
+        if selected_splitter == None:
+            QMessageBox.critical(self, "Error", "No splitter selected!")
             return
         
         
@@ -142,6 +147,6 @@ class FeatureSplittingWindow(QWidget):
             QMessageBox.critical(self, "Error", "No save location set!")
             return
 
-        fc = split_plate_features(selected_features, selected_rift, self.session._rotationModel, split_date)
+        fc = split_plate_features(selected_features, selected_splitter, self.session._rotationModel, split_time)
         fc.write(self._save_location)
         QMessageBox.information(self, "Success", "Successfully saved split features: " + path.realpath(self._save_location))

@@ -35,6 +35,11 @@ class MainWindow(QMainWindow):
         load_rotation_model_action = file_menu.addAction("Open Rotation Model")
         load_rotation_model_action.triggered.connect(self.open_rotation_model)
 
+        file_menu.addSeparator()
+
+        reload_action = file_menu.addAction("Reload files")
+        reload_action.triggered.connect(self.open_rotation_model)
+
         # Set initial "view"
         # TODO: self.setCentralWidget(???)
     
@@ -67,3 +72,8 @@ class MainWindow(QMainWindow):
         file_name, _ = QFileDialog.getOpenFileName(self, "Open Rotation Model", ".", "PLATES4 rotation (*.rot)")
         if file_name:
             self.session.load_rotation_model(file_name)
+    
+    @Slot()
+    def reload_files(self):
+        self.session.reload_features()
+        self.session.reload_rotation_model()

@@ -1,61 +1,14 @@
 from os import path
-from PySide6.QtCore import QLocale, QObject, QSortFilterProxyModel
-from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QStandardItemModel
+from PySide6.QtCore import QLocale, QObject
+from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
 from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QStyledItemDelegate, QTreeView, QVBoxLayout, QWidget
 import pygplates
 
 from core.plate_splitter import split_plate_by_line
 from core.session import Session
+from models.line_filter_model import LineFilterModel
+from models.polygon_feature_filter_model import PolygonFeatureFilterModel
 from ui.feature_collection_loader import FeatureCollectionLoader
-
-
-class RiftFilterModel(QSortFilterProxyModel):
-    def __init__(self):
-        super().__init__()
-        self._time_filter: float = float("inf")
-    
-    def filterAcceptsRow(self, row_num: int, _) -> bool:
-        # Get the underlying model
-        model: QStandardItemModel = self.sourceModel()  # type: ignore | We know what data we are dealing with
-        
-        geo_type = model.item(row_num, 2).text()
-        feature_type = model.item(row_num, 1).text()
-        start_time = float(model.item(row_num, 4).text())
-        end_time = float(model.item(row_num, 5).text())
-        
-        return geo_type == "PolylineOnSphere" and feature_type in ["ContinentalRift", "SubductionZone"] and (start_time >= self._time_filter >= end_time)
-    
-    def setTimeFilter(self, time: float):
-        self.beginFilterChange()
-        self._time_filter = time
-        self.invalidateFilter()
-
-class FeatureFilterModel(QSortFilterProxyModel):
-    def __init__(self):
-        super().__init__()
-        self._time_filter: float = float("inf")
-        self._accepted_ids: list[str] = []
-    
-    def filterAcceptsRow(self, row_num: int, _) -> bool:
-        # Get the underlying model
-        model: QStandardItemModel = self.sourceModel()  # type: ignore | We know what data we are dealing with
-        
-        geo_type = model.item(row_num, 2).text()
-        plateId = model.item(row_num, 3).text()
-        start_time = float(model.item(row_num, 4).text())
-        end_time = float(model.item(row_num, 5).text())
-
-        return geo_type == "PolygonOnSphere" and (len(self._accepted_ids) == 0 or plateId in self._accepted_ids) and (start_time >= self._time_filter >= end_time)
-    
-    def setTimeFilter(self, time: float):
-        self.beginFilterChange()
-        self._time_filter = time
-        self.invalidateFilter()
-    
-    def setPlateIdFilter(self, ids: list[str]):
-        self.beginFilterChange()
-        self._accepted_ids = ids
-        self.invalidateFilter()
 
 class TimeDecoratorDelegate(QStyledItemDelegate):
     def __init__(self, /, parent: QObject | None) -> None:
@@ -75,10 +28,11 @@ class FeatureSplittingWindow(QWidget):
 
         self.session = session
 
-        self.rift_model = RiftFilterModel()
+        self.rift_model = LineFilterModel()
+        self.rift_model.setFeatureTypeFilter(["ContinentalRift", "SubductionZone"])
         self.rift_model.setSourceModel(session.get_feature_model())
 
-        self.feature_model = FeatureFilterModel()
+        self.feature_model = PolygonFeatureFilterModel()
         self.feature_model.setSourceModel(session.get_feature_model())
         
         self.setWindowTitle("Plate Splitting Tool")

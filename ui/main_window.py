@@ -1,8 +1,12 @@
-from PySide6.QtCore import Slot
-from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox
+from PySide6 import QtWidgets
+from PySide6.QtCore import QSize, Slot
+from PySide6.QtGui import QAction, QActionGroup, QIcon
+from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QWidget
 
 from core.session import Session
 from ui.feature_collection_loader import FeatureCollectionLoader
+from ui.feature_splitting_window import FeatureSplittingWindow
+from ui.line_splitting_window import LineSplitterWindow
 from util.project_storage import load_project, save_project
 
 
@@ -15,8 +19,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("GPlates Utilities")
 
         # Widgets and Sub-Windows
-        # TODO: Add these
         self.feature_collection_manager = FeatureCollectionLoader(session)
+        # NOTE: There must be a way to store the central widgets instead of re-initializing them.
 
         # File Menu Items
         file_menu = self.menuBar().addMenu("File")
@@ -40,8 +44,26 @@ class MainWindow(QMainWindow):
         reload_action = file_menu.addAction("Reload files")
         reload_action.triggered.connect(self.reload_files)
 
+
+        # Icons
+        feature_split_icon = QIcon("./media/icons/plate_split_256.png")
+        line_split_icon = QIcon("./media/icons/line_split_256.png")
+
+        # Toolbars
+        views_toolbar = self.addToolBar("Views")
+        views_toolbar.setIconSize(QSize(32, 32))
+        split_plates_action = views_toolbar.addAction(feature_split_icon, "Split Plates")
+        split_plates_action.triggered.connect(self.show_feature_split_view)
+        cheese_action = views_toolbar.addAction(line_split_icon, "Split Lines")
+        cheese_action.triggered.connect(self.show_line_split_view)
+        
+        action_group = QActionGroup(self)
+        action_group.addAction(split_plates_action)
+        action_group.addAction(cheese_action)
+        action_group.setExclusive(True)
+
         # Set initial "view"
-        # TODO: self.setCentralWidget(???)
+        self.show_feature_split_view()
     
     @Slot()
     def open_project(self):
@@ -77,3 +99,15 @@ class MainWindow(QMainWindow):
     def reload_files(self):
         self.session.reload_features()
         self.session.reload_rotation_model()
+    
+    @Slot()
+    def show_feature_split_view(self):
+        # TODO: clear any still opened windows
+        self.resize(950, 400)
+        self.setCentralWidget(FeatureSplittingWindow(self.session))
+    
+    @Slot()
+    def show_line_split_view(self):
+        # TODO: clear any still opened windows
+        self.resize(400, 400)
+        self.setCentralWidget(LineSplitterWindow(self.session))

@@ -8,7 +8,6 @@ from core.session import Session
 from models.line_filter_model import LineFilterModel
 from models.polygon_filter_model import PolygonFilterModel
 from ui.decorators.time_decorator_delegate import TimeDecoratorDelegate
-from ui.feature_collection_loader import FeatureCollectionLoader
 
 class FeatureSplittingWindow(QWidget):
     def __init__(self, session: Session):
@@ -25,8 +24,6 @@ class FeatureSplittingWindow(QWidget):
         
         self.setWindowTitle("Plate Splitting Tool")
         self.resize(900, 400)
-        
-        self.debugwindow = FeatureCollectionLoader(self.session)
 
         split_date_label = QLabel("Split Time:")
         self.split_time = QLineEdit()
@@ -59,19 +56,7 @@ class FeatureSplittingWindow(QWidget):
             QTreeView::branch:selected {
                 background-color: rgb(34, 177, 76);
             }
-            """)    # Sets 
-
-        manage_feature_collection_button = QPushButton("Manage Feature Collections")
-        manage_feature_collection_button.clicked.connect(self.load_feature_collection)
-
-        reload_feature_collections_button = QPushButton("Reload Feature Collections")
-        reload_feature_collections_button.clicked.connect(self.session.reload_features)
-
-        load_rotation_model_button = QPushButton("Load Rotation Model")
-        load_rotation_model_button.clicked.connect(self.load_rotation_model)
-
-        reload_rotation_model_button = QPushButton("Reload Rotation Model")
-        reload_rotation_model_button.clicked.connect(self.session.reload_rotation_model)
+            """)    # Sets
 
         set_save_location_button = QPushButton("Set Save Location")
         set_save_location_button.clicked.connect(self.set_save_location)
@@ -92,10 +77,6 @@ class FeatureSplittingWindow(QWidget):
         side_layout.addLayout(split_time_layout)
         side_layout.addLayout(plate_filter_layout)
         side_layout.addWidget(self.rift_selection)
-        side_layout.addWidget(manage_feature_collection_button, 0)
-        side_layout.addWidget(reload_feature_collections_button, 0)
-        side_layout.addWidget(load_rotation_model_button, 0)
-        side_layout.addWidget(reload_rotation_model_button, 0)
         side_layout.addWidget(QWidget(), 1)
         side_layout.addWidget(set_save_location_button, 0)
         side_layout.addWidget(split_button, 0)
@@ -105,14 +86,6 @@ class FeatureSplittingWindow(QWidget):
         main_layout.addLayout(side_layout, 0)
 
         self.setLayout(main_layout)
-    
-    def load_feature_collection(self):
-        self.debugwindow.show()
-    
-    def load_rotation_model(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Rotation Model", ".", "PLATES4 rotation (*.rot)")
-        if file_name:
-            self.session.load_rotation_model(file_name)
     
     def set_save_location(self):
         self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")

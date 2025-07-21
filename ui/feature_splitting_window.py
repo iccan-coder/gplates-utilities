@@ -61,7 +61,7 @@ class TimeDecoratorDelegate(QStyledItemDelegate):
     def __init__(self, /, parent: QObject | None) -> None:
         super().__init__(parent)
     
-    def displayText(self, value: str, locale: QLocale) -> str:
+    def displayText(self, value: str, _: QLocale) -> str:
         if value == "-inf":
             return "Distant Future"
         elif value == "inf":
@@ -87,9 +87,9 @@ class FeatureSplittingWindow(QWidget):
         self.debugwindow = FeatureCollectionLoader(self.session)
 
         split_date_label = QLabel("Split Time:")
-        self.split_date = QLineEdit()
-        self.split_date.setValidator(QDoubleValidator())
-        self.split_date.editingFinished.connect(self.updateSplitTime)
+        self.split_time = QLineEdit()
+        self.split_time.setValidator(QDoubleValidator())
+        self.split_time.editingFinished.connect(self.updateSplitTime)
 
         plate_id_label = QLabel("Plate ID(s):")
         self.plate_filter = QLineEdit()
@@ -118,48 +118,44 @@ class FeatureSplittingWindow(QWidget):
                 background-color: rgb(34, 177, 76);
             }
             """)    # Sets 
-        
 
-        
+        manage_feature_collection_button = QPushButton("Manage Feature Collections")
+        manage_feature_collection_button.clicked.connect(self.load_feature_collection)
 
-        button_1 = QPushButton("Manage Feature Collections")
-        button_1.clicked.connect(self.load_feature_collection)
+        reload_feature_collections_button = QPushButton("Reload Feature Collections")
+        reload_feature_collections_button.clicked.connect(self.session.reload_features)
 
+        load_rotation_model_button = QPushButton("Load Rotation Model")
+        load_rotation_model_button.clicked.connect(self.load_rotation_model)
 
-        button_reload_fcs = QPushButton("Reload Feature Collections")
-        button_reload_fcs.clicked.connect(self.session.reload_features)
+        reload_rotation_model_button = QPushButton("Reload Rotation Model")
+        reload_rotation_model_button.clicked.connect(self.session.reload_rotation_model)
 
-        button_rotation_model = QPushButton("Load Rotation Model")
-        button_rotation_model.clicked.connect(self.load_rotation_model)
-
-        button_rotation_reload = QPushButton("Reload Rotation Model")
-        button_rotation_reload.clicked.connect(self.session.reload_rotation_model)
-
-        button_2 = QPushButton("Set Save Location")
-        button_2.clicked.connect(self.set_save_location)
+        set_save_location_button = QPushButton("Set Save Location")
+        set_save_location_button.clicked.connect(self.set_save_location)
         self._save_location: str = ""
 
         split_button = QPushButton("Split")
         split_button.clicked.connect(self.on_split)
 
-        split_date_layout = QHBoxLayout()
-        split_date_layout.addWidget(split_date_label, 0)
-        split_date_layout.addWidget(self.split_date, 1)
+        split_time_layout = QHBoxLayout()
+        split_time_layout.addWidget(split_date_label, 0)
+        split_time_layout.addWidget(self.split_time, 1)
 
         plate_filter_layout = QHBoxLayout()
         plate_filter_layout.addWidget(plate_id_label, 0)
         plate_filter_layout.addWidget(self.plate_filter, 1)
 
         side_layout = QVBoxLayout()
-        side_layout.addLayout(split_date_layout)
+        side_layout.addLayout(split_time_layout)
         side_layout.addLayout(plate_filter_layout)
         side_layout.addWidget(self.rift_selection)
-        side_layout.addWidget(button_1, 0)
-        side_layout.addWidget(button_reload_fcs, 0)
-        side_layout.addWidget(button_rotation_model, 0)
-        side_layout.addWidget(button_rotation_reload, 0)
+        side_layout.addWidget(manage_feature_collection_button, 0)
+        side_layout.addWidget(reload_feature_collections_button, 0)
+        side_layout.addWidget(load_rotation_model_button, 0)
+        side_layout.addWidget(reload_rotation_model_button, 0)
         side_layout.addWidget(QWidget(), 1)
-        side_layout.addWidget(button_2, 0)
+        side_layout.addWidget(set_save_location_button, 0)
         side_layout.addWidget(split_button, 0)
         
         main_layout = QHBoxLayout()
@@ -180,7 +176,7 @@ class FeatureSplittingWindow(QWidget):
         self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")
 
     def updateSplitTime(self):
-        time = float(self.split_date.text())
+        time = float(self.split_time.text())
         self.rift_model.setTimeFilter(time)
         self.feature_model.setTimeFilter(time)
     
@@ -199,11 +195,11 @@ class FeatureSplittingWindow(QWidget):
         all_features = [f for lfc in self.session.loaded_feature_collections for f in lfc.feature_collection]
         selected_rift = next(filter(lambda f: f.get_feature_id().get_string() == self.rift_model.itemData(rift_idx)[0], all_features))
         
-        if self.split_date.text() == "":
+        if self.split_time.text() == "":
             QMessageBox.critical(self, "Error", "No rifting time set!")
             return
 
-        split_date = float(self.split_date.text())
+        split_date = float(self.split_time.text())
 
         if selected_rift == None:
             QMessageBox.critical(self, "Error", "No rift selected!")

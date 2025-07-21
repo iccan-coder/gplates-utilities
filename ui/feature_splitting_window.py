@@ -1,9 +1,8 @@
 from os import path
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
 from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget
-import pygplates
 
-from core.plate_splitter import split_plate_by_line
+from core.plate_splitter import split_plate_features
 from core.session import Session
 from models.line_filter_model import LineFilterModel
 from models.polygon_filter_model import PolygonFilterModel
@@ -143,36 +142,6 @@ class FeatureSplittingWindow(QWidget):
             QMessageBox.critical(self, "Error", "No save location set!")
             return
 
-        fc = self.actual_splitting(selected_features, selected_rift, split_date)
+        fc = split_plate_features(selected_features, selected_rift, self.session._rotationModel, split_date)
         fc.write(self._save_location)
         QMessageBox.information(self, "Success", "Successfully saved split features: " + path.realpath(self._save_location))
-
-    def actual_splitting(self, plates, rift, rifting_time) -> pygplates.FeatureCollection:
-        initial_feature_collection = pygplates.FeatureCollection(plates)
-        rotation_model = self.session._rotationModel
-        snapshot = pygplates.ReconstructSnapshot(initial_feature_collection, rotation_model, rifting_time)
-        rift_snapshot = pygplates.ReconstructSnapshot(pygplates.FeatureCollection(rift), rotation_model, rifting_time)
-        snapshot_features = snapshot.get_reconstructed_geometries()
-        rift_snapshot_feature = rift_snapshot.get_reconstructed_geometries()[0]
-
-        new_collection = pygplates.FeatureCollection()
-
-        for feature in snapshot_features:
-            plates = split_plate_by_line(feature.get_reconstructed_geometry(), rift_snapshot_feature.get_reconstructed_geometry())
-
-            if len(plates) == 0:
-                # Ignore making features if we have no plates
-                continue
-
-            plate_feature = feature.get_feature()
-
-            for new_plate in [
-                pygplates.Feature.create_reconstructable_feature(plate_feature.get_feature_type(), split_plate, f"{plate_feature.get_name()} [{i}]", reconstruction_plate_id=plate_feature.get_reconstruction_plate_id())
-                for i, split_plate in enumerate(plates)
-                ]:
-                new_plate.set_valid_time(rifting_time, float("-inf"))
-                new_collection.add(new_plate)
-        
-        pygplates.reverse_reconstruct(new_collection, rotation_model, rifting_time)
-
-        return new_collection

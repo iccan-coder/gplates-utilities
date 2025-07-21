@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         file_menu.addSeparator()
 
         reload_action = file_menu.addAction("Reload files")
-        reload_action.triggered.connect(self.open_rotation_model)
+        reload_action.triggered.connect(self.reload_files)
 
         # Set initial "view"
         # TODO: self.setCentralWidget(???)

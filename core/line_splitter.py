@@ -5,7 +5,6 @@ from core.arc_geometry import get_arc_intersection
 
 def split_lines(line_a: PolylineOnSphere, line_b: PolylineOnSphere) -> Tuple[List[PolylineOnSphere], List[PolylineOnSphere]]:
     if not line_a or not line_b:
-        print(" == No valid Lines == ")
         return [line_a], [line_b]
 
     intersections = []
@@ -31,7 +30,6 @@ def split_lines(line_a: PolylineOnSphere, line_b: PolylineOnSphere) -> Tuple[Lis
                 b_2.to_lat_lon_point()
             )
             if intersect:
-                print(" == [INTERSECT] == ")
                 intersections.append(intersect.to_point_on_sphere())
                 new_a.append(intersect.to_point_on_sphere())
                 new_b.insert(new_b.index(b_1) + 1, intersect.to_point_on_sphere())
@@ -42,7 +40,6 @@ def split_lines(line_a: PolylineOnSphere, line_b: PolylineOnSphere) -> Tuple[Lis
 
     # If no intersections found, return original lines here
     if len(intersections) == 0:
-        print(" == No intersections found == ")
         return [line_a], [line_b]
 
     split_lines_a: List[PolylineOnSphere] = []

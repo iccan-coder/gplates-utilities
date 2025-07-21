@@ -1,7 +1,54 @@
 from typing import List, Tuple
-from pygplates.pygplates import PolylineOnSphere, PointOnSphere
+from pygplates.pygplates import PolylineOnSphere, PointOnSphere, Feature, FeatureCollection, RotationModel, ReconstructSnapshot
 
 from core.arc_geometry import get_arc_intersection
+
+def split_line_features(line_a: Feature, line_b: Feature, rotation_model: RotationModel, split_time: float) -> FeatureCollection:
+    initial_feature_collection = FeatureCollection([line_a, line_b])
+    snapshot = ReconstructSnapshot(initial_feature_collection, rotation_model, split_time)
+    snapshot_lines = snapshot.get_reconstructed_geometries()
+
+    new_collection = FeatureCollection()
+
+    split_a, split_b = split_lines(snapshot_lines[0].get_reconstructed_geometry(), snapshot_lines[1].get_reconstructed_geometry())
+
+    for idx, line in enumerate(split_a):
+            feature = Feature.create_reconstructable_feature(
+                line_a.get_feature_type(),
+                line,
+                f"{line_a.get_name()} [{idx}]",
+                "",  # description
+                (split_time, line_a.get_valid_time()[1]),
+            )
+            if line_a.get_reconstruction_method() == "ByPlateID":
+                feature.set_reconstruction_plate_id(line_a.get_reconstruction_plate_id())
+            else:
+                # We are dealing with a half-stage rotation
+                feature.set_left_plate(line_a.get_left_plate())
+                feature.set_right_plate(line_a.get_right_plate())
+            
+            feature.set_reconstruction_method(line_a.get_reconstruction_method())
+            new_collection.add(feature)
+
+    for idx, line in enumerate(split_b):
+        feature = Feature.create_reconstructable_feature(
+            line_b.get_feature_type(),
+            line,
+            f"{line_b.get_name()} [{idx}]",
+            "",  # description
+            (split_time, line_b.get_valid_time()[1])
+        )
+        if line_b.get_reconstruction_method() == "ByPlateID":
+            feature.set_reconstruction_plate_id(line_b.get_reconstruction_plate_id())
+        else:
+            # We are dealing with a half-stage rotation
+            feature.set_left_plate(line_b.get_left_plate())
+            feature.set_right_plate(line_b.get_right_plate())
+        
+        feature.set_reconstruction_method(line_b.get_reconstruction_method())
+        new_collection.add(feature)
+    
+    return new_collection
 
 def split_lines(line_a: PolylineOnSphere, line_b: PolylineOnSphere) -> Tuple[List[PolylineOnSphere], List[PolylineOnSphere]]:
     if not line_a or not line_b:

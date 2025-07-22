@@ -1,105 +1,45 @@
 from os import path
-from PySide6.QtCore import QLocale, QObject, QSortFilterProxyModel
-from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator, QStandardItemModel
-from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QStyledItemDelegate, QTreeView, QVBoxLayout, QWidget
-import pygplates
+from PySide6.QtCore import Slot
+from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
+from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget
 
-from core.plate_splitter import split_plate_by_line
+from core.plate_splitter import split_plate_features
 from core.session import Session
-from ui.feature_collection_loader import FeatureCollectionLoader
-
-
-class RiftFilterModel(QSortFilterProxyModel):
-    def __init__(self):
-        super().__init__()
-        self._time_filter: float = float("inf")
-    
-    def filterAcceptsRow(self, row_num: int, _) -> bool:
-        # Get the underlying model
-        model: QStandardItemModel = self.sourceModel()  # type: ignore | We know what data we are dealing with
-        
-        geo_type = model.item(row_num, 2).text()
-        feature_type = model.item(row_num, 1).text()
-        start_time = float(model.item(row_num, 4).text())
-        end_time = float(model.item(row_num, 5).text())
-        
-        return geo_type == "PolylineOnSphere" and feature_type in ["ContinentalRift", "SubductionZone"] and (start_time >= self._time_filter >= end_time)
-    
-    def setTimeFilter(self, time: float):
-        self.beginFilterChange()
-        self._time_filter = time
-        self.invalidateFilter()
-
-class FeatureFilterModel(QSortFilterProxyModel):
-    def __init__(self):
-        super().__init__()
-        self._time_filter: float = float("inf")
-        self._accepted_ids: list[str] = []
-    
-    def filterAcceptsRow(self, row_num: int, _) -> bool:
-        # Get the underlying model
-        model: QStandardItemModel = self.sourceModel()  # type: ignore | We know what data we are dealing with
-        
-        geo_type = model.item(row_num, 2).text()
-        plateId = model.item(row_num, 3).text()
-        start_time = float(model.item(row_num, 4).text())
-        end_time = float(model.item(row_num, 5).text())
-
-        return geo_type == "PolygonOnSphere" and (len(self._accepted_ids) == 0 or plateId in self._accepted_ids) and (start_time >= self._time_filter >= end_time)
-    
-    def setTimeFilter(self, time: float):
-        self.beginFilterChange()
-        self._time_filter = time
-        self.invalidateFilter()
-    
-    def setPlateIdFilter(self, ids: list[str]):
-        self.beginFilterChange()
-        self._accepted_ids = ids
-        self.invalidateFilter()
-
-class TimeDecoratorDelegate(QStyledItemDelegate):
-    def __init__(self, /, parent: QObject | None) -> None:
-        super().__init__(parent)
-    
-    def displayText(self, value: str, locale: QLocale) -> str:
-        if value == "-inf":
-            return "Distant Future"
-        elif value == "inf":
-            return "Distant Past"
-        
-        return value
+from models.line_filter_model import LineFilterModel
+from models.polygon_filter_model import PolygonFilterModel
+from ui.decorators.time_decorator_delegate import TimeDecoratorDelegate
 
 class FeatureSplittingWindow(QWidget):
     def __init__(self, session: Session):
         super().__init__()
 
         self.session = session
+        self._save_location: str = ""
 
-        self.rift_model = RiftFilterModel()
-        self.rift_model.setSourceModel(session.get_feature_model())
+        self.splitter_model = LineFilterModel()
+        self.splitter_model.setFeatureTypeFilter(["ContinentalRift", "SubductionZone"])
+        self.splitter_model.setSourceModel(session.get_feature_model())
 
-        self.feature_model = FeatureFilterModel()
+        self.feature_model = PolygonFilterModel()
         self.feature_model.setSourceModel(session.get_feature_model())
         
         self.setWindowTitle("Plate Splitting Tool")
         self.resize(900, 400)
-        
-        self.debugwindow = FeatureCollectionLoader(self.session)
 
         split_date_label = QLabel("Split Time:")
-        self.split_date = QLineEdit()
-        self.split_date.setValidator(QDoubleValidator())
-        self.split_date.editingFinished.connect(self.updateSplitTime)
+        self.split_time = QLineEdit()
+        self.split_time.setValidator(QDoubleValidator())
+        self.split_time.editingFinished.connect(self.update_split_time)
 
         plate_id_label = QLabel("Plate ID(s):")
         self.plate_filter = QLineEdit()
         self.plate_filter.setValidator(QRegularExpressionValidator("\\d+(,\\d*)*"))
-        self.plate_filter.editingFinished.connect(self.updatePlateFilter)
+        self.plate_filter.editingFinished.connect(self.update_plate_filter)
         
-        self.rift_selection = QComboBox()
-        self.rift_selection.setModel(self.rift_model)
-        self.rift_selection.setModelColumn(0)
-        self.rift_selection.setPlaceholderText("[Load Feature Collections to select Rift]")
+        self.splitter_selection = QComboBox()
+        self.splitter_selection.setModel(self.splitter_model)
+        self.splitter_selection.setModelColumn(0)
+        self.splitter_selection.setPlaceholderText("Select splitter feature ...")
 
         self.new_feature_view = QTreeView()
         self.new_feature_view.setModel(self.feature_model)
@@ -117,49 +57,28 @@ class FeatureSplittingWindow(QWidget):
             QTreeView::branch:selected {
                 background-color: rgb(34, 177, 76);
             }
-            """)    # Sets 
-        
+            """)    # Sets
 
-        
-
-        button_1 = QPushButton("Manage Feature Collections")
-        button_1.clicked.connect(self.load_feature_collection)
-
-
-        button_reload_fcs = QPushButton("Reload Feature Collections")
-        button_reload_fcs.clicked.connect(self.session.reload_features)
-
-        button_rotation_model = QPushButton("Load Rotation Model")
-        button_rotation_model.clicked.connect(self.load_rotation_model)
-
-        button_rotation_reload = QPushButton("Reload Rotation Model")
-        button_rotation_reload.clicked.connect(self.session.reload_rotation_model)
-
-        button_2 = QPushButton("Set Save Location")
-        button_2.clicked.connect(self.set_save_location)
-        self._save_location: str = ""
+        set_save_location_button = QPushButton("Set Save Location")
+        set_save_location_button.clicked.connect(self.set_save_location)
 
         split_button = QPushButton("Split")
         split_button.clicked.connect(self.on_split)
 
-        split_date_layout = QHBoxLayout()
-        split_date_layout.addWidget(split_date_label, 0)
-        split_date_layout.addWidget(self.split_date, 1)
+        split_time_layout = QHBoxLayout()
+        split_time_layout.addWidget(split_date_label, 0)
+        split_time_layout.addWidget(self.split_time, 1)
 
         plate_filter_layout = QHBoxLayout()
         plate_filter_layout.addWidget(plate_id_label, 0)
         plate_filter_layout.addWidget(self.plate_filter, 1)
 
         side_layout = QVBoxLayout()
-        side_layout.addLayout(split_date_layout)
+        side_layout.addLayout(split_time_layout)
         side_layout.addLayout(plate_filter_layout)
-        side_layout.addWidget(self.rift_selection)
-        side_layout.addWidget(button_1, 0)
-        side_layout.addWidget(button_reload_fcs, 0)
-        side_layout.addWidget(button_rotation_model, 0)
-        side_layout.addWidget(button_rotation_reload, 0)
+        side_layout.addWidget(self.splitter_selection)
         side_layout.addWidget(QWidget(), 1)
-        side_layout.addWidget(button_2, 0)
+        side_layout.addWidget(set_save_location_button, 0)
         side_layout.addWidget(split_button, 0)
         
         main_layout = QHBoxLayout()
@@ -168,45 +87,41 @@ class FeatureSplittingWindow(QWidget):
 
         self.setLayout(main_layout)
     
-    def load_feature_collection(self):
-        self.debugwindow.show()
-    
-    def load_rotation_model(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Rotation Model", ".", "PLATES4 rotation (*.rot)")
-        if file_name:
-            self.session.load_rotation_model(file_name)
-    
+    @Slot()
     def set_save_location(self):
-        self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")
+        self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", self.session._project_path if self.session._project_path else ".", "GPlates Markup Language (*.gpml)")
 
-    def updateSplitTime(self):
-        time = float(self.split_date.text())
-        self.rift_model.setTimeFilter(time)
+    @Slot()
+    def update_split_time(self):
+        time = float(self.split_time.text())
+        self.splitter_model.setTimeFilter(time)
         self.feature_model.setTimeFilter(time)
     
-    def updatePlateFilter(self):
+    @Slot()
+    def update_plate_filter(self):
         filter_text = self.plate_filter.text()
         if filter_text == "":
             self.feature_model.setPlateIdFilter([])
         self.feature_model.setPlateIdFilter([id for id in filter_text.split(",") if len(id) > 0])
 
+    @Slot()
     def on_split(self):
-        if self.rift_selection.currentIndex() < 0:
+        if self.splitter_selection.currentIndex() < 0:
             QMessageBox.critical(self, "Error", "No rift selected!")
             return
         
-        rift_idx = self.rift_model.index(self.rift_selection.currentIndex(), 6)
+        splitter_idx = self.splitter_model.index(self.splitter_selection.currentIndex(), 6)
         all_features = [f for lfc in self.session.loaded_feature_collections for f in lfc.feature_collection]
-        selected_rift = next(filter(lambda f: f.get_feature_id().get_string() == self.rift_model.itemData(rift_idx)[0], all_features))
+        selected_splitter = next(filter(lambda f: f.get_feature_id().get_string() == self.splitter_model.itemData(splitter_idx)[0], all_features))
         
-        if self.split_date.text() == "":
-            QMessageBox.critical(self, "Error", "No rifting time set!")
+        if self.split_time.text() == "":
+            QMessageBox.critical(self, "Error", "No split time set!")
             return
 
-        split_date = float(self.split_date.text())
+        split_time = float(self.split_time.text())
 
-        if selected_rift == None:
-            QMessageBox.critical(self, "Error", "No rift selected!")
+        if selected_splitter == None:
+            QMessageBox.critical(self, "Error", "No splitter selected!")
             return
         
         
@@ -232,36 +147,6 @@ class FeatureSplittingWindow(QWidget):
             QMessageBox.critical(self, "Error", "No save location set!")
             return
 
-        fc = self.actual_splitting(selected_features, selected_rift, split_date)
+        fc = split_plate_features(selected_features, selected_splitter, self.session._rotationModel, split_time)
         fc.write(self._save_location)
         QMessageBox.information(self, "Success", "Successfully saved split features: " + path.realpath(self._save_location))
-
-    def actual_splitting(self, plates, rift, rifting_time) -> pygplates.FeatureCollection:
-        initial_feature_collection = pygplates.FeatureCollection(plates)
-        rotation_model = self.session._rotationModel
-        snapshot = pygplates.ReconstructSnapshot(initial_feature_collection, rotation_model, rifting_time)
-        rift_snapshot = pygplates.ReconstructSnapshot(pygplates.FeatureCollection(rift), rotation_model, rifting_time)
-        snapshot_features = snapshot.get_reconstructed_geometries()
-        rift_snapshot_feature = rift_snapshot.get_reconstructed_geometries()[0]
-
-        new_collection = pygplates.FeatureCollection()
-
-        for feature in snapshot_features:
-            plates = split_plate_by_line(feature.get_reconstructed_geometry(), rift_snapshot_feature.get_reconstructed_geometry())
-
-            if len(plates) == 0:
-                # Ignore making features if we have no plates
-                continue
-
-            plate_feature = feature.get_feature()
-
-            for new_plate in [
-                pygplates.Feature.create_reconstructable_feature(plate_feature.get_feature_type(), split_plate, f"{plate_feature.get_name()} [{i}]", reconstruction_plate_id=plate_feature.get_reconstruction_plate_id())
-                for i, split_plate in enumerate(plates)
-                ]:
-                new_plate.set_valid_time(rifting_time, float("-inf"))
-                new_collection.add(new_plate)
-        
-        pygplates.reverse_reconstruct(new_collection, rotation_model, rifting_time)
-
-        return new_collection

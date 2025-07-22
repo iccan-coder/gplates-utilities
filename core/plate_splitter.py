@@ -1,6 +1,36 @@
+from pygplates import Feature, FeatureCollection, RotationModel, ReconstructSnapshot, reverse_reconstruct
 from pygplates.pygplates import PolygonOnSphere, PolylineOnSphere, PointOnSphere
 from core.arc_geometry import get_arc_intersection
 from core.metadata import MetaPoint
+
+def split_plate_features(plates: Feature, splitting_feature: Feature, rotation_model: RotationModel, split_time: float) -> FeatureCollection:
+    initial_feature_collection = FeatureCollection(plates)
+    snapshot = ReconstructSnapshot(initial_feature_collection, rotation_model, split_time)
+    splitter_snapshot = ReconstructSnapshot(FeatureCollection(splitting_feature), rotation_model, split_time)
+    snapshot_features = snapshot.get_reconstructed_geometries()
+    splitter_feature = splitter_snapshot.get_reconstructed_geometries()[0]
+
+    new_collection = FeatureCollection()
+
+    for feature in snapshot_features:
+        plates = split_plate_by_line(feature.get_reconstructed_geometry(), splitter_feature.get_reconstructed_geometry())
+
+        if len(plates) == 0:
+            # Ignore making features if we have no plates
+            continue
+
+        plate_feature = feature.get_feature()
+
+        for new_plate in [
+            Feature.create_reconstructable_feature(plate_feature.get_feature_type(), split_plate, f"{plate_feature.get_name()} [{i}]", reconstruction_plate_id=plate_feature.get_reconstruction_plate_id())
+            for i, split_plate in enumerate(plates)
+            ]:
+            new_plate.set_valid_time(split_time, float("-inf"))
+            new_collection.add(new_plate)
+    
+    reverse_reconstruct(new_collection, rotation_model, split_time)
+
+    return new_collection
 
 def split_plate_by_line(plate: PolygonOnSphere, line: PolylineOnSphere)-> list[PolygonOnSphere]:
     plate_points = plate.get_points()

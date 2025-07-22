@@ -89,7 +89,7 @@ class FeatureSplittingWindow(QWidget):
     
     @Slot()
     def set_save_location(self):
-        self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")
+        self._save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", self.session._project_path if self.session._project_path else ".", "GPlates Markup Language (*.gpml)")
 
     @Slot()
     def update_split_time(self):

@@ -34,7 +34,7 @@ class FeatureCollectionLoader(QWidget):
         self.setLayout(v_layout)
     
     def load_feature_collection(self):
-        fc_filepaths, _ = QFileDialog.getOpenFileNames(self, "Open Feature Collection(s)", ".", "GPlates Markup Language (*.gpml)")
+        fc_filepaths, _ = QFileDialog.getOpenFileNames(self, "Open Feature Collection(s)", self.session._project_path if self.session._project_path else ".", "GPlates Markup Language (*.gpml)")
         if len(fc_filepaths) == 0:
             return
 

@@ -25,6 +25,8 @@ class MainWindow(QMainWindow):
         # File Menu Items
         file_menu = self.menuBar().addMenu("File")
 
+        new_project_action = file_menu.addAction("New Project")
+        new_project_action.triggered.connect(self.new_project)
         load_project_action = file_menu.addAction("Open Project")
         load_project_action.triggered.connect(self.open_project)
         save_project_action = file_menu.addAction("Save Project")
@@ -64,6 +66,10 @@ class MainWindow(QMainWindow):
 
         # Set initial "view"
         self.show_feature_split_view()
+
+    @Slot()
+    def new_project(self):
+        self.session.reset_project()
     
     @Slot()
     def open_project(self):
@@ -75,7 +81,12 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def save_project(self):
-        file_name, _ = QFileDialog.getSaveFileName(self, "Save Project", ".", "JavaScript Object Notation (*.json)")
+        file_name: str = ""
+        if self.session._project_file:
+            file_name = self.session._project_file
+        else:
+            file_name, _ = QFileDialog.getSaveFileName(self, "Save Project", ".", "JavaScript Object Notation (*.json)")
+        
         if not file_name:
             return
         if not save_project(self.session, file_name):
@@ -83,7 +94,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def open_feature_collections(self):
-        fc_filepaths, _ = QFileDialog.getOpenFileNames(self, "Open Feature Collection(s)", ".", "GPlates Markup Language (*.gpml)")
+        fc_filepaths, _ = QFileDialog.getOpenFileNames(self, "Open Feature Collection(s)", self.session._project_path if self.session._project_path else ".", "GPlates Markup Language (*.gpml)")
         if len(fc_filepaths) == 0:
             return
 
@@ -91,7 +102,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def open_rotation_model(self):
-        file_name, _ = QFileDialog.getOpenFileName(self, "Open Rotation Model", ".", "PLATES4 rotation (*.rot)")
+        file_name, _ = QFileDialog.getOpenFileName(self, "Open Rotation Model", self.session._project_path if self.session._project_path else ".", "PLATES4 rotation (*.rot)")
         if file_name:
             self.session.load_rotation_model(file_name)
     

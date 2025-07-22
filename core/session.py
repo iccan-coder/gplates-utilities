@@ -1,4 +1,5 @@
 import os
+from os.path import dirname
 from typing import Sequence
 
 from PySide6.QtCore import QStringListModel, Qt
@@ -26,14 +27,32 @@ class Session:
 
         self._rotationModel_path: str = ""
         self._rotationModel: pygplates.RotationModel = None
+
+        self._project_file: str = ""
+        self._project_path: str = ""
+        # TODO: Think about caring about dirty state
+        # self._project_dirty: bool = False
     
+    def reset_project(self) -> None:
+        self._project_file = ""
+        self.loaded_feature_collections.clear()
+        self._rotationModel_path = ""
+        self._rotationModel = None
+
+        self._feature_collection_names.setStringList([])
+        self.reload_features()
+
+    def set_project(self, project_file_path: str) -> None:
+        self._project_file = project_file_path
+        self._project_path = os.path.dirname(project_file_path)
+
     def load_rotation_model(self, path):
         self._rotationModel_path = path
         self._rotationModel = pygplates.RotationModel(path)
     
     def reload_rotation_model(self):
         if self._rotationModel_path == "":
-            QMessageBox.warning(None, "Error", "Cannot reload uninitialized feature model.")
+            #QMessageBox.warning(None, "Error", "Cannot reload uninitialized feature model.")
             return
         
         self._rotationModel = pygplates.RotationModel(self._rotationModel_path)

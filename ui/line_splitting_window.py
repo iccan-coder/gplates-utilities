@@ -84,7 +84,7 @@ class LineSplitterWindow(QWidget):
     
     @Slot()
     def set_save_location(self):
-        save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", ".", "GPlates Markup Language (*.gpml)")
+        save_location, _ = QFileDialog.getSaveFileName(self, "Set Resulting Feature Collection", self.session._project_path if self.session._project_path else ".", "GPlates Markup Language (*.gpml)")
         if save_location:
             self._save_location = save_location
     

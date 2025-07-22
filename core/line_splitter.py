@@ -1,5 +1,6 @@
 from typing import List, Tuple
-from pygplates.pygplates import PolylineOnSphere, PointOnSphere, Feature, FeatureCollection, RotationModel, ReconstructSnapshot
+from pygplates import Feature, FeatureCollection, RotationModel, ReconstructSnapshot, reverse_reconstruct
+from pygplates.pygplates import PolylineOnSphere, PointOnSphere
 
 from core.arc_geometry import get_arc_intersection
 
@@ -47,6 +48,8 @@ def split_line_features(line_a: Feature, line_b: Feature, rotation_model: Rotati
         
         feature.set_reconstruction_method(line_b.get_reconstruction_method())
         new_collection.add(feature)
+
+    reverse_reconstruct(new_collection, rotation_model, split_time)
     
     return new_collection
 

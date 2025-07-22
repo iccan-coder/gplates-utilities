@@ -5,10 +5,12 @@ This tool is written in Python using PyGPlates and NumPy packages, with a Qt GUI
 
 ## Features
 
-The current version (v0.1.0) allows you to:
-- Split features with polygon geometry using a `ContinentalRift` feature at a given time in the reconstruction history
-- Filter features by valid time and plate ID(s)
-- Easily load, unload, and reload feature collections
+The current version (v0.2.0) allows you to:
+- Split features with polygon geometry using a `ContinentalRift` or `SubductionZone` feature at a given time in the reconstruction history.
+- Split two lines features based on their point of intersection. This let's you clean up rifts, as well as split subduction zones and MORs.
+- Filter features by valid time and plate ID(s).
+- Easily load, unload, and reload feature collections.
+- Project files (`.json`) allow for easy return to ongoing projects.
 - Save newly created split features in a new feature collection[^1]
 
 [^1]: Currently, this has to be a **new** feature collection, as the saving process is destructive
@@ -19,12 +21,16 @@ If you know how to set one up, I would recommend using a Python virtual environm
 
 0. Ensure [Python](https://www.python.org/) is installed and updated
     - This tool was developed with version `3.13.1`, I cannot guarantee that it will work with previous versions
-1. Either download the [latest release](https://github.com/iccan-coder/gplates-utilities/releases/tag/v0.1.0) or clone this repository with `git clone https://github.com/iccan-coder/gplates-utilities.git`
+1. Either download the [latest release](https://github.com/iccan-coder/gplates-utilities/releases/latest) or clone this repository with `git clone https://github.com/iccan-coder/gplates-utilities.git`
 2. Open a terminal in the downloaded folder or navigate to the clones repository with `cd gplates-utilities`
 3. Install the required packages with `pip install -r requirements.txt`
 4. Run the application with `python main.py`
 
 ## How to Use
+
+**v0.2 introduction video coming soon!**
+
+Video below is outdated now but still explains the basic operations, even if buttons have moved.
 
 [![Watch the video](https://img.youtube.com/vi/Vikk2rcL9M4/maxresdefault.jpg)](https://www.youtube.com/watch?v=Vikk2rcL9M4)
 
@@ -37,12 +43,9 @@ Please open a new issue on this project, or comment on existing issues that matc
 Aside from ongoing bug hunts, there are plans for more features in future version.
 Note that this listing is just a rough overview, goals may change or be dropped as development continues.
 
-### v0.1.x
-
-- [ ] New screen for splitting line features using rifts (useful for quickly splitting `SubductionZone` features)
-
 ### v0.2
 
+- [X] New screen for splitting line features using rifts (useful for quickly splitting `SubductionZone` features) _(implemented v0.2.0)_
 - [ ] [Boolean operations](https://en.wikipedia.org/wiki/Boolean_operations_on_polygons) for polygon features (at least Union and Intersection)
 - [ ] 1-Click Removal of duplicate points on geometries (Topologies can cause these)
 - [ ] Statistics screen (for example, total feature area by plate ID) with the ability to query features by plate ID, valid time, feature type.
@@ -60,6 +63,9 @@ These features will require more research into how they work (or how best to tac
 
 I just want to say that without [this post](https://blog.mbedded.ninja/mathematics/geometry/spherical-geometry/finding-the-intersection-of-two-arcs-that-lie-on-a-sphere/) I would have had a much harder time making the splitting
 work. Spherical geometry is just not something I know anything about.
+
+- South America featured in icons taken from [Wikimedia Commons](https://commons.wikimedia.org/wiki/File:Continents.svg)
+- Scissors featured in icons taken from [uxwing](https://uxwing.com/cut-scissor-icon/)
 
 ## Contributing
 

@@ -63,26 +63,31 @@ def split_lines(line_a: PolylineOnSphere, line_b: PolylineOnSphere) -> Tuple[Lis
     new_a: List[PointOnSphere] = []
     new_b: List[PointOnSphere] = line_b[:]
 
+    for point in line_a:
+        if point in line_b:
+            intersections.append(point)
+
     for i in range(len(line_a) - 1):
         a_1 = line_a[i]
         a_2 = line_a[i + 1]
 
         new_a.append(a_1)
 
-        for j in range(len(line_b) - 1):
-            b_1 = line_b[j]
-            b_2 = line_b[j + 1]
+        if not a_1 in intersections:
+            for j in range(len(line_b) - 1):
+                b_1 = line_b[j]
+                b_2 = line_b[j + 1]
 
-            intersect = get_arc_intersection(
-                a_1.to_lat_lon_point(),
-                a_2.to_lat_lon_point(),
-                b_1.to_lat_lon_point(),
-                b_2.to_lat_lon_point()
-            )
-            if intersect:
-                intersections.append(intersect.to_point_on_sphere())
-                new_a.append(intersect.to_point_on_sphere())
-                new_b.insert(new_b.index(b_1) + 1, intersect.to_point_on_sphere())
+                intersect = get_arc_intersection(
+                    a_1.to_lat_lon_point(),
+                    a_2.to_lat_lon_point(),
+                    b_1.to_lat_lon_point(),
+                    b_2.to_lat_lon_point()
+                )
+                if intersect:
+                    intersections.append(intersect.to_point_on_sphere())
+                    new_a.append(intersect.to_point_on_sphere())
+                    new_b.insert(new_b.index(b_1) + 1, intersect.to_point_on_sphere())
         
         if i == len(line_a) - 2:
             # At the end, make sure to append the last point

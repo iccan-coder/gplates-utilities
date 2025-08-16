@@ -8,6 +8,7 @@ This tool is written in Python using PyGPlates and NumPy packages, with a Qt GUI
 The current version (v0.2.0) allows you to:
 - Split features with polygon geometry using a `ContinentalRift` or `SubductionZone` feature at a given time in the reconstruction history.
 - Split two lines features based on their point of intersection. This let's you clean up rifts, as well as split subduction zones and MORs.
+- Union, intersect, or difference any two arbitrary polygon features. Useful for merging land masses.
 - Filter features by valid time and plate ID(s).
 - Easily load, unload, and reload feature collections.
 - Project files (`.json`) allow for easy return to ongoing projects.
@@ -46,7 +47,7 @@ Note that this listing is just a rough overview, goals may change or be dropped 
 ### v0.2
 
 - [X] New screen for splitting line features using rifts (useful for quickly splitting `SubductionZone` features) _(implemented v0.2.0)_
-- [ ] [Boolean operations](https://en.wikipedia.org/wiki/Boolean_operations_on_polygons) for polygon features (at least Union and Intersection)
+- [X] [Boolean operations](https://en.wikipedia.org/wiki/Boolean_operations_on_polygons) for polygon features (at least Union and Intersection)
 - [ ] 1-Click Removal of duplicate points on geometries (Topologies can cause these)
 - [ ] Statistics screen (for example, total feature area by plate ID) with the ability to query features by plate ID, valid time, feature type.
 

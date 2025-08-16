@@ -58,7 +58,7 @@ These features will require more research into how they work (or how best to tac
 
 - [ ] Recreating flow lines (having to manually do this is pretty annoying)
 - [ ] Rotation file tools (creating new plates, have A stop following B, make plates follow each other)
-- [ ] Splitting a polygon feature with another polygon (useful for subducted `OceanCrust` features)
+- [X] Splitting a polygon feature with another polygon (useful for subducted `OceanCrust` features)
 - [ ] Save split features in original feature collection instead of creating new one (I first have to ensure that this tool does not mess things up)
 
 ## Credits

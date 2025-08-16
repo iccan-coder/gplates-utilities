@@ -5,7 +5,6 @@ def a_and_b(polyA: PolygonOnSphere, polyB: PolygonOnSphere) -> list[PolygonOnSph
     polyA.partition(polyB, partitioned_geometries_inside=inside)
     polyB.partition(polyA, partitioned_geometries_inside=inside)
 
-    # inside = PolylineOnSphere.join(insideA) + PolylineOnSphere.join(insideB)
     return [PolygonOnSphere(g[:]) for g in PolylineOnSphere.join(inside)]
 intersection_of_polygons = a_and_b
 
@@ -25,7 +24,7 @@ def union_of_polygons(polyA: PolygonOnSphere, polyB: PolygonOnSphere) -> list[Po
     overlapB = polyB.partition(polyA, partitioned_geometries_outside=outside)
 
     if overlapA == PolygonOnSphere.PartitionResult.outside and overlapB == PolygonOnSphere.PartitionResult.outside:
-      return [polyA, polyB]
+        return [polyA, polyB]
 
     return [PolygonOnSphere(g[:]) for g in PolylineOnSphere.join(outside)]
   

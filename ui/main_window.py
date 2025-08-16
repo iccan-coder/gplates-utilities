@@ -1,6 +1,5 @@
-from PySide6 import QtWidgets
 from PySide6.QtCore import QSize, Slot
-from PySide6.QtGui import QAction, QActionGroup, QIcon
+from PySide6.QtGui import QActionGroup, QIcon
 from PySide6.QtWidgets import QFileDialog, QMainWindow, QMessageBox, QWidget
 
 from core.session import Session

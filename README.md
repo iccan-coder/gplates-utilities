@@ -6,6 +6,7 @@ This tool is written in Python using PyGPlates and NumPy packages, with a Qt GUI
 ## Features
 
 The current version (v0.2.0) allows you to:
+
 - Split features with polygon geometry using a `ContinentalRift` or `SubductionZone` feature at a given time in the reconstruction history.
 - Split two lines features based on their point of intersection. This let's you clean up rifts, as well as split subduction zones and MORs.
 - Union, intersect, or difference any two arbitrary polygon features. Useful for merging land masses.

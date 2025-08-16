@@ -1,12 +1,10 @@
 from os import path
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
-from PySide6.QtWidgets import QAbstractItemView, QComboBox, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget, QCheckBox
+from PySide6.QtWidgets import QAbstractItemView, QFileDialog, QHBoxLayout, QLabel, QLineEdit, QMessageBox, QPushButton, QTreeView, QVBoxLayout, QWidget, QCheckBox
 
-from core.plate_splitter import split_plate_features
 from core.polygon_operations import join_plate_features_by_intersect, join_plate_features_by_union, split_plate_features_by_difference
 from core.session import Session
-from models.line_filter_model import LineFilterModel
 from models.polygon_filter_model import PolygonFilterModel
 from ui.decorators.time_decorator_delegate import TimeDecoratorDelegate
 
@@ -177,6 +175,7 @@ class PolygonOperationWindow(QWidget):
             return
         fc.write(self._save_location)
         QMessageBox.information(self, "Success", "Successfully saved split features: " + path.realpath(self._save_location))
+  
     @Slot()
     def on_difference(self):
         if self.split_time.text() == "":
@@ -217,6 +216,7 @@ class PolygonOperationWindow(QWidget):
             return
         fc.write(self._save_location)
         QMessageBox.information(self, "Success", "Successfully saved split features: " + path.realpath(self._save_location))
+  
     @Slot()
     def on_union(self):
         if self.split_time.text() == "":

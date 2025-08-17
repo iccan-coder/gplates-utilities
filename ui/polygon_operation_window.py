@@ -20,7 +20,7 @@ class PolygonOperationWindow(QWidget):
         self.feature_model = PolygonFilterModel()
         self.feature_model.setSourceModel(session.get_feature_model())
         
-        self.setWindowTitle("Plate Splitting Tool")
+        self.setWindowTitle("Polygon Operation Tool")
         self.resize(900, 400)
 
         split_date_label = QLabel("Split Time:")
